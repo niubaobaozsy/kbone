@@ -1,6 +1,6 @@
 {
 	"name": "@tencent/mp-vite-plugin",
-	"version": "1.6.12",
+	"version": "1.6.13",
 	"description": "a tool for develop miniprogram with vue",
 	"main": "src/index.js",
 	"miniprogram": "src",
