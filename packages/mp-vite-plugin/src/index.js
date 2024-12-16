@@ -668,5 +668,4 @@ function mpVitePlugin(options) {
   
     };
   }
-
-  export default mpVitePlugin;
+  module.exports = mpVitePlugin
