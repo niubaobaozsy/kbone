@@ -1,6 +1,6 @@
 {
-	"name": "mp-vite-plugin",
-	"version": "1.6.11",
+	"name": "@tencent/mp-vite-plugin",
+	"version": "1.6.12",
 	"description": "a tool for develop miniprogram with vue",
 	"main": "src/index.js",
 	"miniprogram": "src",
@@ -19,5 +19,5 @@
 		"webpack": "^5.44.0",
 		"webpack-sources": "^2.2.0"
 	},
-	"gitHead": "335714e2b6cd9c12d159dfc0753c697e800974a4"
+	"gitHead": "d39ac02d363c64bd999032f4bfbdb5790dc8fbc9"
 }
