@@ -53,7 +53,7 @@ const globalVars = [
  */
 function addFile(bundle, filename, content) {
     //  将code设置成文件
-    bundle[fileName] = {
+    bundle[filename] = {
         fileName: filename,
         isAsset: true, // 是否是一个静态资源
         source: content, // 文件内容
@@ -65,34 +65,30 @@ function addFile(bundle, filename, content) {
  * 给 chunk 头尾追加内容
  */
 function wrapChunks(bundle, chunks, globalVarsConfig, workerConfig) {
-  chunks.forEach(chunk => {
-    // 遍历 chunk 中的文件
-    chunk.files.forEach(fileName => {
-      
-      if (workerConfig) {
-        if (typeof workerConfig !== 'string') workerConfig = 'common/workers';
-        workerConfig = path.relative('common', workerConfig);
-      }
-      
-      const isWorker = workerConfig && new RegExp(`${workerConfig}/(.)*.js$`).test(fileName);
-      const isJsFile = /\.js$/.test(fileName);
-      
-      if (isWorker) {
-        // 处理 Web Worker 的 JS 文件
-        const headerContent = workerJsTmpl.replace(/[\r\n\t\s]+/ig, ' ');
-        bundle[fileName].code = `(function(){${headerContent}${bundle[fileName].code}})()`;
-      } else if (isJsFile) {
-        // 处理页面 JS 文件
-        const headerContent = `module.exports = function(window, document) {var App = function(options) {window.appOptions = options};${globalVars.map(item => `var ${item} = window.${item}`).join(';')};`;
-        let customHeaderContent = globalVarsConfig.map(item => `var ${item[0]} = ${item[1] ? item[1] : `window['${item[0]}']`}`).join(';');
-        customHeaderContent = customHeaderContent ? `${customHeaderContent};` : '';
-        const footerContent = '}';
-        
-        bundle[fileName].code = `${headerContent}${customHeaderContent}${bundle[fileName].code}${footerContent}`;
-      }
+    chunks.forEach(fileName => {
+        if (workerConfig) {
+          if (typeof workerConfig !== 'string') workerConfig = 'common/workers';
+          workerConfig = path.relative('common', workerConfig);
+        }
+  
+        const isWorker = workerConfig && new RegExp(`${workerConfig}/(.)*.js$`).test(fileName);
+        const isJsFile = /\.js$/.test(fileName);
+  
+        if (isWorker) {
+          // 处理 Web Worker 的 JS 文件
+          const headerContent = workerJsTmpl.replace(/[\r\n\t\s]+/ig, ' ');
+          bundle[fileName].code = `(function(){${headerContent}${bundle[fileName].code}})()`;
+        } else if (isJsFile) {
+          // 处理页面 JS 文件
+          const headerContent = `module.exports = function(window, document) {var App = function(options) {window.appOptions = options};${globalVars.map(item => `var ${item} = window.${item}`).join(';')};`;
+          let customHeaderContent = globalVarsConfig.map(item => `var ${item[0]} = ${item[1] ? item[1] : `window['${item[0]}']`}`).join(';');
+          customHeaderContent = customHeaderContent ? `${customHeaderContent};` : '';
+          const footerContent = '}';
+  
+          bundle[fileName].code = `${headerContent}${customHeaderContent}${bundle[fileName].code}${footerContent}`;
+        }
     });
-  });
-}
+  }
 
 /**
  * 获取依赖文件路径
@@ -122,6 +118,7 @@ function mpVitePlugin(options) {
             // 获取入口名称
             const entryNames = Object.keys(bundle).filter(fileName => {
                 const chunk = bundle[fileName];
+                console.log('bundle[fileName]',fileName)
                 return chunk.isEntry;
             }).map(fileName => fileName.replace(/\.[^.]+$/, ''));
 
@@ -149,6 +146,7 @@ function mpVitePlugin(options) {
             for (const entryName of entryNames) {
                 const assets = { js: [], css: [] };
                 const filePathMap = {};
+                const extRegex = /\.(css|js|wxss)(\?|$)/
         
                 for (const [fileName, chunkOrAsset] of Object.entries(bundle)) {
                 if (!chunkOrAsset.fileName.includes(entryName)) continue;
@@ -266,7 +264,6 @@ function mpVitePlugin(options) {
                 const pageRoute = `${packageName ? packageName + '/' : ''}pages/${entryName}/index`
                 const configPathPrefix = packageName && !needEmitConfigToSubpackage ? '../' : ''
                 const assetPathPrefix = packageName ? '../' : ''
-
                 // 页面 js
                 let pageJsContent = pageJsTmpl
                     .replace('/* CONFIG_PATH */', `${configPathPrefix}../../config`)
@@ -527,62 +524,62 @@ function mpVitePlugin(options) {
             // node_modules
             addFile(bundle, '../node_modules/.miniprogram', '')
 
-            // 自定义组件
-            if (wxCustomComponentRoot || useWeui) {
-                const realUsingComponents = {}
-                const names = Object.keys(wxCustomComponents)
+            // // 自定义组件
+            // if (wxCustomComponentRoot || useWeui) {
+            //     const realUsingComponents = {}
+            //     const names = Object.keys(wxCustomComponents)
 
-                if (wxCustomComponentRoot) {
-                    // 包含第三方自定义组件
-                    // TODO: 自定义组件支持watch 热更新
-                    // compilation.contextDependencies.add(wxCustomComponentRoot) // 支持 watch
-                    _.copyDir(wxCustomComponentRoot, path.resolve(outputPath, '../custom-component/components'))
+            //     if (wxCustomComponentRoot) {
+            //         // 包含第三方自定义组件
+            //         // TODO: 自定义组件支持watch 热更新
+            //         // compilation.contextDependencies.add(wxCustomComponentRoot) // 支持 watch
+            //         _.copyDir(wxCustomComponentRoot, path.resolve(outputPath, '../custom-component/components'))
 
-                    // 转换路径
-                    names.forEach(key => {
-                        if (!wxCustomComponents[key].isWeui) realUsingComponents[key] = `components/${wxCustomComponents[key].path}`
-                    })
-                }
+            //         // 转换路径
+            //         names.forEach(key => {
+            //             if (!wxCustomComponents[key].isWeui) realUsingComponents[key] = `components/${wxCustomComponents[key].path}`
+            //         })
+            //     }
 
-                if (useWeui) {
-                    // 包含 weui
-                    names.forEach(key => {
-                        if (wxCustomComponents[key].isWeui) realUsingComponents[key] = wxCustomComponents[key].path
-                    })
-                }
+            //     if (useWeui) {
+            //         // 包含 weui
+            //         names.forEach(key => {
+            //             if (wxCustomComponents[key].isWeui) realUsingComponents[key] = wxCustomComponents[key].path
+            //         })
+            //     }
 
-                // custom-component/index.js
-                addFile(bundle, '../custom-component/index.js', customComponentJsTmpl)
+            //     // custom-component/index.js
+            //     addFile(bundle, '../custom-component/index.js', customComponentJsTmpl)
 
-                // custom-component/index.wxml
-                addFile(bundle, '../custom-component/index.wxml', names.map((key, index) => {
-                    const {props = [], events = []} = wxCustomComponents[key]
-                    return `<${key} wx:${index === 0 ? 'if' : 'elif'}="{{kboneCustomComponentName === '${key}'}}" id="{{id}}" class="{{className}}" style="{{style}}" ${props.map(name => name + '="{{' + (name.replace(/-([a-zA-Z])/g, (all, $1) => $1.toUpperCase())) + '}}"').join(' ')} ${events.map(name => 'bind:' + name + '="on' + name + '"').join(' ')}><block wx:if="{{hasSlots}}"><element wx:for="{{slots}}" wx:key="nodeId" id="{{item.id}}" class="{{item.className}}" style="{{item.style}}" slot="{{item.slot}}" data-private-node-id="{{item.nodeId}}" data-private-page-id="{{item.pageId}}" generic:custom-component="custom-component"></element></block><slot/></${key}>`
-                }).join('\n'))
+            //     // custom-component/index.wxml
+            //     addFile(bundle, '../custom-component/index.wxml', names.map((key, index) => {
+            //         const {props = [], events = []} = wxCustomComponents[key]
+            //         return `<${key} wx:${index === 0 ? 'if' : 'elif'}="{{kboneCustomComponentName === '${key}'}}" id="{{id}}" class="{{className}}" style="{{style}}" ${props.map(name => name + '="{{' + (name.replace(/-([a-zA-Z])/g, (all, $1) => $1.toUpperCase())) + '}}"').join(' ')} ${events.map(name => 'bind:' + name + '="on' + name + '"').join(' ')}><block wx:if="{{hasSlots}}"><element wx:for="{{slots}}" wx:key="nodeId" id="{{item.id}}" class="{{item.className}}" style="{{item.style}}" slot="{{item.slot}}" data-private-node-id="{{item.nodeId}}" data-private-page-id="{{item.pageId}}" generic:custom-component="custom-component"></element></block><slot/></${key}>`
+            //     }).join('\n'))
 
-                // custom-component/index.wxss
-                addFile(bundle, '../custom-component/index.wxss', names.map(key => {
-                    const {externalWxss} = wxCustomComponents[key]
-                    if (externalWxss && typeof externalWxss === 'string') {
-                        return externalWxss
-                    } else if (Array.isArray(externalWxss) && externalWxss.length) {
-                        return externalWxss.map(entryName => {
-                            const assets = assetsMap[entryName]
-                            return assets.css.map(css => `@import "${getAssetPath('', css, assetsSubpackageMap, '../')}";`).join('\n')
-                        }).join('\n\n')
-                    } else {
-                        return ''
-                    }
-                }).join('\n'))
+            //     // custom-component/index.wxss
+            //     addFile(bundle, '../custom-component/index.wxss', names.map(key => {
+            //         const {externalWxss} = wxCustomComponents[key]
+            //         if (externalWxss && typeof externalWxss === 'string') {
+            //             return externalWxss
+            //         } else if (Array.isArray(externalWxss) && externalWxss.length) {
+            //             return externalWxss.map(entryName => {
+            //                 const assets = assetsMap[entryName]
+            //                 return assets.css.map(css => `@import "${getAssetPath('', css, assetsSubpackageMap, '../')}";`).join('\n')
+            //             }).join('\n\n')
+            //         } else {
+            //             return ''
+            //         }
+            //     }).join('\n'))
 
-                // custom-component/index.json
-                realUsingComponents['custom-component'] = './index'
-                realUsingComponents.element = 'miniprogram-element'
-                addFile(bundle, '../custom-component/index.json', JSON.stringify({
-                    component: true,
-                    usingComponents: realUsingComponents,
-                }, null, '\t'))
-            }
+            //     // custom-component/index.json
+            //     realUsingComponents['custom-component'] = './index'
+            //     realUsingComponents.element = 'miniprogram-element'
+            //     addFile(bundle, '../custom-component/index.json', JSON.stringify({
+            //         component: true,
+            //         usingComponents: realUsingComponents,
+            //     }, null, '\t'))
+            // }
 
 
 
@@ -591,7 +588,7 @@ function mpVitePlugin(options) {
 
             const chunks = Object.entries(bundle).filter(([key, value]) => value.type === 'chunk');
 
-            if (afterOptimizations) {
+            if (options.afterOptimizations) {
               // 在构建后处理 chunks
               wrapChunks(bundle, chunks.map(([_, value]) => value), globalVarsConfig, workerConfig);
             } else {
@@ -608,7 +605,7 @@ function mpVitePlugin(options) {
 
 
       renderChunk(code, chunk, options) {
-        if (!afterOptimizations) {
+        if (!options.afterOptimizations) {
           const globalVarsConfig = generateConfig.globalVars || [];
           const workerConfig = generateConfig.worker;
 
