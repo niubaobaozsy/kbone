@@ -181,6 +181,7 @@ function mpVitePlugin(options) {
                 assetsMap[entryName] = assets;
             }
 
+            
             // 处理自定义组件字段
             Object.keys(wxCustomComponents).forEach(key => {
                 if (typeof wxCustomComponents[key] === 'string') {

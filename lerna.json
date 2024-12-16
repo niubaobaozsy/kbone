@@ -4,7 +4,7 @@
     "npmClient": "npm",
     "command": {
         "publish": {
-            "ignoreChanges": ["packages/*/test/**/*", "*.md", ".npmignore"]
+            "ignoreChanges": ["packages/*/test/**/*", "*.md", ".npmignore", "package-lock.json"]
         }
     },
     "packages":[
