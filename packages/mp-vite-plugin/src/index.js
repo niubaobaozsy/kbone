@@ -594,7 +594,7 @@ function mpVitePlugin(options) {
             } else {
               // 在构建期间处理 chunks
               chunks.forEach(([fileName, chunk]) => {
-                bundle[fileName].code = wrapChunks(bundle, [chunk], globalVarsConfig, workerConfig);
+                wrapChunks(bundle, [chunk], globalVarsConfig, workerConfig);
               });
             }
 
