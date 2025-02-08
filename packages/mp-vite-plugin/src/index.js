@@ -621,34 +621,33 @@ function mpVitePlugin(options) {
         // 处理自动安装小程序依赖
         const autoBuildNpm = generateConfig.autoBuildNpm || false;
         const distDir = path.resolve(process.cwd(), 'dist'); // 假设dist目录是'./dist'
-  
-        hasBuiltNpm = isFileExisted(path.resolve(distDir, './node_modules/miniprogram-element/package.json')) &&
-                      isFileExisted(path.resolve(distDir, './node_modules/miniprogram-render/package.json'));
-  
+
+        hasBuiltNpm = _.isFileExisted(path.resolve(distDir, './node_modules/miniprogram-element/package.json')) &&
+        _.isFileExisted(path.resolve(distDir, './node_modules/miniprogram-render/package.json'));
+
         if (hasBuiltNpm || !autoBuildNpm) {
           if (hasBuiltNpm) console.log(colors.bold('\ndependencies have been built\n'));
           return;
         }
-  
+
         const build = () => {
-          const elementDist = path.resolve(distDir, './node_modules/miniprogram-element/dist');
-          if (isFileExisted(elementDist)) {
-            fse.copySync(elementDist, path.resolve(distDir, './miniprogram_npm/miniprogram-element'));
+          const elementDist = path.resolve(distDir, './node_modules/miniprogram-element/dist')
+          if (_.isFileExisted(elementDist)) {
+              _.copyDir(elementDist, path.resolve(distDir, './miniprogram_npm/miniprogram-element'))
           } else {
-            fse.copySync(path.resolve(distDir, './node_modules/miniprogram-element/src'), path.resolve(distDir, './miniprogram_npm/miniprogram-element'));
+              _.copyDir(path.resolve(distDir, './node_modules/miniprogram-element/src'), path.resolve(distDir, './miniprogram_npm/miniprogram-element'))
           }
-  
-          const renderDist = path.resolve(distDir, './node_modules/miniprogram-render/dist');
-          if (isFileExisted(renderDist)) {
-            fse.copySync(renderDist, path.resolve(distDir, './miniprogram_npm/miniprogram-render'));
+
+          const renderDist = path.resolve(distDir, './node_modules/miniprogram-render/dist')
+          if (_.isFileExisted(renderDist)) {
+              _.copyDir(renderDist, path.resolve(distDir, './miniprogram_npm/miniprogram-render'))
           } else {
-            fse.copySync(path.resolve(distDir, './node_modules/miniprogram-render/src'), path.resolve(distDir, './miniprogram_npm/miniprogram-render'));
+              _.copyDir(path.resolve(distDir, './node_modules/miniprogram-render/src'), path.resolve(distDir, './miniprogram_npm/miniprogram-render'))
           }
           console.log(colors.bold('\nDependencies built successfully\n'));
-        };
-  
+        }
         console.log(colors.bold('\nstart building dependencies...\n'));
-  
+
         const command = autoBuildNpm === 'yarn' ? 'yarn' : 'npm';
         try {
           const { exitCode } = await execa(command, ['install', '--production'], { cwd: distDir });
