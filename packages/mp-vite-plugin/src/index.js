@@ -65,7 +65,7 @@ function addFile(bundle, filename, content) {
  * 给 chunk 头尾追加内容
  */
 function wrapChunks(bundle, chunks, globalVarsConfig, workerConfig) {
-    chunks.forEach(fileName => {
+    chunks.forEach(({fileName}) => {
         if (workerConfig) {
           if (typeof workerConfig !== 'string') workerConfig = 'common/workers';
           workerConfig = path.relative('common', workerConfig);
@@ -73,19 +73,19 @@ function wrapChunks(bundle, chunks, globalVarsConfig, workerConfig) {
   
         const isWorker = workerConfig && new RegExp(`${workerConfig}/(.)*.js$`).test(fileName);
         const isJsFile = /\.js$/.test(fileName);
-  
         if (isWorker) {
           // 处理 Web Worker 的 JS 文件
           const headerContent = workerJsTmpl.replace(/[\r\n\t\s]+/ig, ' ');
           bundle[fileName].code = `(function(){${headerContent}${bundle[fileName].code}})()`;
         } else if (isJsFile) {
           // 处理页面 JS 文件
-          const headerContent = `module.exports = function(window, document) {var App = function(options) {window.appOptions = options};${globalVars.map(item => `var ${item} = window.${item}`).join(';')};`;
+          const headerContent = `module.exports = function(window, document) {top = window;var App = function(options) {window.appOptions = options};${globalVars.map(item => `var ${item} = window.${item}`).join(';')};`;
           let customHeaderContent = globalVarsConfig.map(item => `var ${item[0]} = ${item[1] ? item[1] : `window['${item[0]}']`}`).join(';');
           customHeaderContent = customHeaderContent ? `${customHeaderContent};` : '';
           const footerContent = '}';
   
           bundle[fileName].code = `${headerContent}${customHeaderContent}${bundle[fileName].code}${footerContent}`;
+
         }
     });
   }
